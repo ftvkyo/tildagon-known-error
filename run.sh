@@ -7,7 +7,6 @@ case "$1" in
 
     "")
         echo "Running install sequence..."
-        $0 reset
         $0 mkdirs
         $0 copy
         $0 reset
