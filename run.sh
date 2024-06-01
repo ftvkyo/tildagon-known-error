@@ -9,13 +9,6 @@ case "$1" in
         echo "Running install sequence..."
         $0 mkdirs
         $0 copy
-        $0 reset
-        ;;
-
-    reset)
-        echo "Resetting..."
-        mpremote reset
-        sleep 5
         ;;
 
     mkdirs)

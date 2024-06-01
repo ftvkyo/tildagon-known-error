@@ -1,4 +1,5 @@
 import math
+from random import random, randint
 
 import app
 
@@ -9,8 +10,9 @@ MIN = -120
 MAX = 120
 SIDE = MAX - MIN
 
-CENTER = MIN + MAX / 2
+CENTER = (MIN + MAX) / 2
 RADIUS = (MAX - MIN) / 2
+AREA = math.pi * RADIUS * RADIUS
 
 
 TEXTS = [
@@ -22,41 +24,95 @@ TEXTS = [
 def polar2cartesian(a, d):
     x = CENTER + math.cos(a) * d
     y = CENTER + math.sin(a) * d
-    return (x, y)
+    return int(x), int(y)
+
+
+def random_polar():
+    a = random() * math.pi * 2
+
+    # As with the same `a`, points get closer with reduction of `d`,
+    # the points are redistributed
+    d = math.sqrt(random()) * RADIUS
+
+    return a, d
+
+
+def random_cartesian():
+    x = MIN + random() * SIDE
+    y = MIN + random() * SIDE
+
+    return x, y
 
 
 class KnownErrorApp(app.App):
     def __init__(self):
         self.button_states = Buttons(self)
 
+        # Selected display text
         self.text_index = 0
-        self.glitch_percent = 0
+
+        # Glitch effect
+        self.glitch_enabled = False
+        self.glitch_timing = 0
+        self.glitch_period_ms = 2000
+        self.glitch_stripes = []
+
+    #############
+    # Overrides #
+    #############
 
     def update(self, delta):
+        if self.glitch_enabled:
+            self.glitch_timing += delta
+            if self.glitch_timing > self.glitch_period_ms:
+                self.glitch_timing = 0
+                self.update_glitch()
+
         if self.button_states.get(BUTTON_TYPES["CANCEL"]):
             self.button_states.clear()
+            print("Closing")
             self.minimise()
 
-        if self.button_states.get(BUTTON_TYPES["UP"]):
+        elif self.button_states.get(BUTTON_TYPES["CONFIRM"]):
             self.button_states.clear()
+            self.glitch_enabled = not self.glitch_enabled
+            print(f"Glitch enabled: {self.glitch_enabled}")
 
+        elif self.button_states.get(BUTTON_TYPES["UP"]):
+            self.button_states.clear()
             self.text_index += 1
             self.text_index %= len(TEXTS)
 
-        if self.button_states.get(BUTTON_TYPES["DOWN"]):
+        elif self.button_states.get(BUTTON_TYPES["DOWN"]):
             self.button_states.clear()
-
-            self.text_index = self.text_index - 1
+            self.text_index -= 1
             self.text_index %= len(TEXTS)
 
     def draw(self, ctx):
         ctx.save()
-        self.clear_background(ctx)
-        ctx.rgb(1,1,1).move_to(-80,0).text(TEXTS[self.text_index])
+        self.clear(ctx)
+        self.text(ctx)
+        if self.glitch_enabled:
+            self.glitch(ctx)
         ctx.restore()
 
-    def clear_background(self, ctx):
-        ctx.rgb(0,0,0).rectangle(MIN, MIN, SIDE, SIDE).fill()
+    ########
+    # User #
+    ########
+
+    def update_glitch(self):
+        self.glitch_stripes = []
+        for _ in range(randint(0, 32)):
+            x = MIN + random() * SIDE
+            r, g, b = random(), random(), random()
+            self.glitch_stripes.append((x, r, g, b))
+
+    def clear(self, ctx):
+        ctx.rgb(0, 0, 0).rectangle(MIN, MIN, SIDE, SIDE).fill()
+
+    def text(self, ctx):
+        ctx.rgb(1, 1, 1).move_to(-80, 0).text(TEXTS[self.text_index])
 
     def glitch(self, ctx):
-        pass
+        for (x, r, g, b) in self.glitch_stripes:
+            ctx.rgb(r, g, b).rectangle(x, MIN, 1, SIDE).fill()
