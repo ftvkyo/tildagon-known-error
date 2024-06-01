@@ -1,0 +1,6 @@
+{
+    "callable": "KnownErrorApp",
+    "name": "Known Error",
+    "path": "apps.known-error.app",
+    "hidden": false
+}
