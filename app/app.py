@@ -91,7 +91,7 @@ class KnownErrorApp(app.App):
     def draw(self, ctx):
         ctx.save()
         self.clear(ctx)
-        self.text(ctx)
+        self.text(ctx, TEXTS[self.text_index])
         if self.glitch_enabled:
             self.glitch(ctx)
         ctx.restore()
@@ -110,8 +110,10 @@ class KnownErrorApp(app.App):
     def clear(self, ctx):
         ctx.rgb(0, 0, 0).rectangle(MIN, MIN, SIDE, SIDE).fill()
 
-    def text(self, ctx):
-        ctx.rgb(1, 1, 1).move_to(-80, 0).text(TEXTS[self.text_index])
+    def text(self, ctx, text):
+        width = ctx.text_width(text)
+        left_edge = CENTER - width / 2
+        ctx.rgb(1, 1, 1).move_to(left_edge, 0).text(text)
 
     def glitch(self, ctx):
         for (x, r, g, b) in self.glitch_stripes:
