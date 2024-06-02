@@ -2,8 +2,10 @@ import math
 from random import random, randint
 
 import app
-
+from tildagonos import tildagonos
 from events.input import Buttons, BUTTON_TYPES
+from system.eventbus import eventbus
+from system.patterndisplay.events import PatternDisable, PatternEnable
 
 
 MIN = -120
@@ -13,6 +15,17 @@ SIDE = MAX - MIN
 CENTER = (MIN + MAX) / 2
 RADIUS = (MAX - MIN) / 2
 AREA = math.pi * RADIUS * RADIUS
+
+LED_COLORS = [
+    (0, 0, 0),
+    (0, 0, 15),
+    (0, 15, 0),
+    (0, 15, 15),
+    (15, 0, 0),
+    (15, 0, 15),
+    (15, 15, 0),
+    (15, 15, 15),
+]
 
 
 TEXTS = [
@@ -56,6 +69,7 @@ class KnownErrorApp(app.App):
         self.glitch_timing = 0
         self.glitch_period_ms = 2000
         self.glitch_stripes = []
+        self.glitch_leds = []
 
     #############
     # Overrides #
@@ -71,12 +85,17 @@ class KnownErrorApp(app.App):
         if self.button_states.get(BUTTON_TYPES["CANCEL"]):
             self.button_states.clear()
             print("Closing")
+            eventbus.emit(PatternEnable())
             self.minimise()
 
         elif self.button_states.get(BUTTON_TYPES["CONFIRM"]):
             self.button_states.clear()
             self.glitch_enabled = not self.glitch_enabled
             print(f"Glitch enabled: {self.glitch_enabled}")
+            if self.glitch_enabled:
+                eventbus.emit(PatternDisable())
+            else:
+                eventbus.emit(PatternEnable())
 
         elif self.button_states.get(BUTTON_TYPES["UP"]):
             self.button_states.clear()
@@ -96,9 +115,9 @@ class KnownErrorApp(app.App):
             self.glitch(ctx)
         ctx.restore()
 
-    ########
-    # User #
-    ########
+    ###########
+    # Updates #
+    ###########
 
     def update_glitch(self):
         self.glitch_stripes = []
@@ -106,6 +125,15 @@ class KnownErrorApp(app.App):
             x = MIN + random() * SIDE
             r, g, b = random(), random(), random()
             self.glitch_stripes.append((x, r, g, b))
+
+        self.glitch_leds = []
+        for _ in range(12):
+            i = randint(0, len(LED_COLORS) - 1)
+            self.glitch_leds.append(LED_COLORS[i])
+
+    ###########
+    # Display #
+    ###########
 
     def clear(self, ctx):
         ctx.rgb(0, 0, 0).rectangle(MIN, MIN, SIDE, SIDE).fill()
@@ -118,3 +146,5 @@ class KnownErrorApp(app.App):
     def glitch(self, ctx):
         for (x, r, g, b) in self.glitch_stripes:
             ctx.rgb(r, g, b).rectangle(x, MIN, 1, SIDE).fill()
+        for (i, color) in enumerate(self.glitch_leds):
+            tildagonos.leds[i + 1] = color
